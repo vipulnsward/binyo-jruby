@@ -1,0 +1,9 @@
+== binyo-jruby
+
+Fast binary IO for JRuby. 
+
+JRuby Impl of - https://github.com/emboss/binyo
+
+=== License
+
+Copyright (c) 2012 Vipul A M, Martin Boßlet. See LICENSE for further details.
