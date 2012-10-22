@@ -37,7 +37,8 @@ import org.jruby.runtime.load.BasicLibraryService;
  * 
  * @author <a href="mailto:Martin.Bosslet@googlemail.com">Martin Bosslet</a>
  */
-public class BinyoCoreService implements BasicLibraryService {
+public class BinyoJrubyService implements BasicLibraryService {
+    
     @Override
     public boolean basicLoad(Ruby runtime) throws IOException {
         BinyoService.create(runtime);

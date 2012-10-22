@@ -1,19 +1,18 @@
 /**
  * *** BEGIN LICENSE BLOCK ***** Version: CPL 1.0/GPL 2.0/LGPL 2.1
- * 
+ *
  * The contents of this file are subject to the Common Public License Version
  * 1.0 (the "License"); you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
  * http://www.eclipse.org/legal/cpl-v10.html
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
  * the specific language governing rights and limitations under the License.
- * 
- * Copyright (C) 2012
- * Vipul A M <vipulnsward@gmail.com> 
- * Martin Bosslet <Martin.Bosslet@googlemail.com>
- * 
+ *
+ * Copyright (C) 2012 Vipul A M <vipulnsward@gmail.com> Martin Bosslet
+ * <Martin.Bosslet@googlemail.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"), or
  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"), in
@@ -26,16 +25,16 @@
  * provisions above, a recipient may use your version of this file under the
  * terms of any one of the CPL, the GPL or the LGPL.
  */
-
 package org.jruby.ext.binyo;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import static org.jruby.RubyEnumerator.enumeratorize;
-import org.jruby.RubyInteger;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -88,6 +87,10 @@ public class RubyByteList extends RubyObject {
     @JRubyMethod
     public IRubyObject initialize(ThreadContext ctx, IRubyObject iVal) {
         return (iVal instanceof RubyString) ? createNewBytes(iVal) : createNewSize(iVal);
+    }
+
+    protected byte[] getBytes() {
+        return bytes;
     }
 
     @JRubyMethod
@@ -145,13 +148,13 @@ public class RubyByteList extends RubyObject {
         if (size == Integer.MAX_VALUE) {
             throw getRuntime().newArgumentError(" index too big");
         }
-        return (item instanceof RubyByte) ? byteAppend((RubyByte)item) : objectAppend(item);  
+        return (item instanceof RubyByte) ? byteAppend((RubyByte) item) : objectAppend(item);
     }
-    
-    private RubyByteList byteAppend(RubyByte item){
+
+    private RubyByteList byteAppend(RubyByte item) {
         byte[] combined = new byte[bytes.length + 1];
-        System.arraycopy(bytes,0,combined,0,bytes.length);
-        combined[bytes.length]=item.getByte();
+        System.arraycopy(bytes, 0, combined, 0, bytes.length);
+        combined[bytes.length] = item.getByte();
         return this;
     }
 
@@ -161,12 +164,44 @@ public class RubyByteList extends RubyObject {
     }
 
     private RubyByteList objectAppend(IRubyObject item) {
-        byte []append=item.asJavaString().getBytes();
+        byte[] append = item.asJavaString().getBytes();
         byte[] combined = new byte[bytes.length + append.length];
         for (int i = 0; i < combined.length; ++i) {
             combined[i] = i < bytes.length ? bytes[i] : append[i - bytes.length];
         }
-        bytes=combined;
+        bytes = combined;
         return this;
+    }
+
+    @JRubyMethod(name = "[]=")
+    public IRubyObject a_set(IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof RubyFixnum) {
+            store((int)((RubyFixnum) arg0).getLongValue(), arg1);
+        } else if (arg0 instanceof RubyRange) {
+            long first = RubyNumeric.num2long(((RubyRange) arg0).first());
+            long last = RubyNumeric.num2long(((RubyRange) arg0).last());
+            if (arg1 instanceof RubyByteList) {
+                //TODO: process bytelist
+                ((RubyByteList) arg1).getBytes();
+            } else {
+                //TODO: expand array and store bytes
+                arg1.asJavaString().getBytes();
+            }
+        } else {
+            store((int)RubyNumeric.num2long(arg0), arg1);
+        }
+        return arg1;
+    }
+
+    private void store(int index, IRubyObject value) {
+        if (index < 0) {
+            throw getRuntime().newIndexError("index " + index + " out of array");
+        }
+        if (value instanceof RubyByte) {
+            bytes[index] = ((RubyByte) value).getByte();
+        } else {
+            bytes[index] = value.asJavaString().getBytes()[0];
+        }
+
     }
 }
